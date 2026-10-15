@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get Kite</title>
+<style>
+  :root { --bg:#f6f5f2; --fg:#16161a; --muted:#5d5d66; --card:#fff; --line:#dddbd5; --accent:#1f5eff; --accent-fg:#fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121214; --fg:#f1f1f3; --muted:#a0a0aa; --card:#1c1c20; --line:#2e2e34; --accent:#5b8cff; --accent-fg:#0b0b0d; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:40px 16px 64px; }
+  h1 { font-size:40px; margin:0 0 4px; letter-spacing:-0.02em; }
+  .sub { color:var(--muted); margin:0 0 32px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:16px; }
+  h2 { font-size:20px; margin:0 0 12px; }
+  a.btn { display:block; text-align:center; background:var(--accent); color:var(--accent-fg); text-decoration:none; font-weight:600; font-size:18px; padding:14px; border-radius:10px; }
+  ol { margin:14px 0 0; padding-left:20px; color:var(--muted); }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:var(--muted); }
+  .line { display:flex; gap:8px; margin-top:10px; }
+  code { flex:1; min-width:0; overflow-x:auto; white-space:nowrap; font:13px/1.4 ui-monospace, Consolas, monospace; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px; }
+  button { font:inherit; font-weight:600; border:1px solid var(--line); background:var(--card); color:var(--fg); border-radius:8px; padding:0 14px; cursor:pointer; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Get Kite</h1>
+  <p class="sub">Always the latest version.</p>
+
+  <div class="card">
+    <h2>Windows</h2>
+    <a class="btn" href="https://github.com/Boreing-Media/kite-download/releases/latest/download/Kite-Windows.zip">Download for Windows</a>
+    <ol>
+      <li>Right-click the zip → <b>Extract All</b>.</li>
+      <li>Double-click <b>Make this PC reachable</b>, choose a password, click <b>Yes</b>.</li>
+    </ol>
+    <details>
+      <summary>Faster: one line, no unzipping</summary>
+      <p>Press <b>Win+R</b>, paste this, press Enter:</p>
+      <div class="line"><code id="w">powershell -ep bypass -c "[Net.ServicePointManager]::SecurityProtocol=3072;irm https://boreing-media.github.io/kite-download/win.txt|iex"</code><button data-copy="w">Copy</button></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>Mac</h2>
+    <a class="btn" href="https://github.com/Boreing-Media/kite-download/releases/latest/download/Kite.dmg">Download for Mac</a>
+    <ol>
+      <li>Open the file and drag Kite to Applications.</li>
+      <li>Open Kite.</li>
+    </ol>
+  </div>
+</main>
+<script>
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.onclick = function () {
+      var t = document.getElementById(b.dataset.copy).textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(
+        function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); },
+        function () { var r = document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.copy)); getSelection().removeAllRanges(); getSelection().addRange(r); });
+    };
+  });
+</script>
+</body>
+</html>

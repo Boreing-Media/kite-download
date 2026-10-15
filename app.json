@@ -1,0 +1,9 @@
+{
+  "name": "Kite download",
+  "slug": "kite-download",
+  "description": "Public download page for Kite installers (Windows + Mac). Part of Kite, not its own app.",
+  "owner": "samhaiman-boreingmedia",
+  "app": false,
+  "url": "https://boreing-media.github.io/kite-download/",
+  "created": "2026-10-15"
+}

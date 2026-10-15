@@ -1,0 +1,21 @@
+#!/bin/bash
+# ./release — put the newest Kite installers behind the download page.
+#   Page:     https://boreing-media.github.io/kite-download/
+#   Windows:  ~/AppDevelopment/kite/out/Kite-Windows.zip
+#   Mac:      newest ~/AppDevelopment/kite/out/Kite-*.dmg (published as Kite.dmg)
+# Makes a new GitHub release marked "latest"; the page's links always point at latest.
+set -euo pipefail
+cd "$(dirname "$0")"
+OUT=~/AppDevelopment/kite/out
+WIN="$OUT/Kite-Windows.zip"
+DMG=$(ls -t "$OUT"/Kite-*.dmg | head -1)
+[ -f "$WIN" ] && [ -f "$DMG" ] || { echo "missing installer in $OUT" >&2; exit 1; }
+mkdir -p out
+cp "$WIN" out/Kite-Windows.zip
+cp "$DMG" out/Kite.dmg
+TAG=$(date +%Y-%m-%d-%H%M)
+GH() { ~/AppDevelopment/bin/gh-as samhaiman-boreingmedia "$@"; }
+GH release create "$TAG" -R Boreing-Media/kite-download --latest \
+  --title "Kite $TAG" --notes "Windows: $(basename "$WIN") ($(date -r "$WIN" '+%d %b %H:%M')). Mac: $(basename "$DMG")." \
+  out/Kite-Windows.zip out/Kite.dmg
+echo "Live: https://boreing-media.github.io/kite-download/"
