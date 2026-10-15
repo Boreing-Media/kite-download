@@ -16,10 +16,10 @@
   h2 { font-size:20px; margin:0 0 12px; }
   a.btn { display:block; text-align:center; background:var(--accent); color:var(--accent-fg); text-decoration:none; font-weight:600; font-size:18px; padding:14px; border-radius:10px; }
   ol { margin:14px 0 0; padding-left:20px; color:var(--muted); }
-  details { margin-top:14px; }
+  details { margin-top:14px; min-width:0; overflow:hidden; }
   summary { cursor:pointer; color:var(--muted); }
   .line { display:flex; gap:8px; margin-top:10px; }
-  code { flex:1; min-width:0; overflow-x:auto; white-space:nowrap; font:13px/1.4 ui-monospace, Consolas, monospace; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px; }
+  code { flex:1 1 0; width:0; min-width:0; overflow-x:auto; white-space:nowrap; font:13px/1.4 ui-monospace, Consolas, monospace; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px; }
   button { font:inherit; font-weight:600; border:1px solid var(--line); background:var(--card); color:var(--fg); border-radius:8px; padding:0 14px; cursor:pointer; }
 </style>
 </head>
