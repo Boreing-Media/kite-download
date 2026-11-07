@@ -1,4 +1,4 @@
-# Kite for Windows, one line. Run from Win+R (or any PowerShell):
+# Takeoff for Windows, one line. Run from Win+R (or any PowerShell):
 #   powershell -ep bypass -c "[Net.ServicePointManager]::SecurityProtocol=3072;irm https://boreing-media.github.io/kite-download/win.txt|iex"
 # Downloads the latest Kite-Windows.zip, unzips it (no "Extract All" step), runs "Make this PC reachable".
 # Works back to Windows 7 / PowerShell 2: no Expand-Archive, no Invoke-WebRequest.
@@ -9,13 +9,16 @@ $root = Join-Path $env:LOCALAPPDATA 'Kite\download'
 $zip  = Join-Path $root 'Kite-Windows.zip'
 if (Test-Path $root) { Remove-Item $root -Recurse -Force }
 New-Item -ItemType Directory -Path $root | Out-Null
-Write-Host 'Downloading Kite...'
+Write-Host 'Downloading Takeoff...'
 (New-Object Net.WebClient).DownloadFile($url, $zip)
 Write-Host 'Unzipping...'
 $sh = New-Object -ComObject Shell.Application
 $sh.Namespace($root).CopyHere($sh.Namespace($zip).Items(), 0x14)
-$cmd = Join-Path $root 'Kite-Windows\Make this PC reachable.cmd'
-for ($i = 0; $i -lt 50 -and -not (Test-Path $cmd); $i++) { Start-Sleep -Milliseconds 200 }
+# The zip's folder is Takeoff-Windows (Kite-Windows before 6 Nov 2026).
+$cmd = Join-Path $root 'Takeoff-Windows\Make this PC reachable.cmd'
+$old = Join-Path $root 'Kite-Windows\Make this PC reachable.cmd'
+for ($i = 0; $i -lt 50 -and -not (Test-Path $cmd) -and -not (Test-Path $old); $i++) { Start-Sleep -Milliseconds 200 }
+if (-not (Test-Path $cmd) -and (Test-Path $old)) { $cmd = $old }
 if (-not (Test-Path $cmd)) { throw "Unzip failed: $cmd is missing" }
-Write-Host 'Setting up Kite. Choose a password, then click Yes.'
+Write-Host 'Setting up Takeoff. Choose a password, then click Yes.'
 Start-Process -FilePath $cmd -WorkingDirectory (Split-Path $cmd) -Wait -NoNewWindow
