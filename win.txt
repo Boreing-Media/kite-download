@@ -1,10 +1,10 @@
 # Takeoff for Windows, one line. Run from Win+R (or any PowerShell):
 #   powershell -ep bypass -c "[Net.ServicePointManager]::SecurityProtocol=3072;irm https://boreing-media.github.io/kite-download/win.txt|iex"
-# Downloads the latest Kite-Windows.zip, unzips it (no "Extract All" step), runs "Make this PC reachable".
+# Downloads the latest Takeoff-Windows.zip, unzips it (no "Extract All" step), runs "Make this PC reachable".
 # Works back to Windows 7 / PowerShell 2: no Expand-Archive, no Invoke-WebRequest.
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}
-$url  = 'https://github.com/Boreing-Media/kite-download/releases/latest/download/Kite-Windows.zip'
+$url  = 'https://github.com/Boreing-Media/kite-download/releases/latest/download/Takeoff-Windows.zip'
 $root = Join-Path $env:LOCALAPPDATA 'Kite\download'
 $zip  = Join-Path $root 'Kite-Windows.zip'
 if (Test-Path $root) { Remove-Item $root -Recurse -Force }
