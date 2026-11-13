@@ -5,8 +5,8 @@
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}
 # Pinned by ./release (13 Nov 2026): this exact release and its SHA-256. A zip that differs is refused, never run.
-$tag  = '2026-11-13-1306'
-$sha  = 'd6affb633e5bd6a7482b7941d1d762e4d7f1cf2a7ab3c9216c766d56ff06789d'
+$tag  = '2026-11-13-1641'
+$sha  = '062514b2306f4ae351e451758ed1b3635779e229b6fbc78b97a97a66f98ad01e'
 $url  = "https://github.com/Boreing-Media/kite-download/releases/download/$tag/Takeoff-Windows.zip"
 $root = Join-Path $env:LOCALAPPDATA 'Kite\download'
 $zip  = Join-Path $root 'Kite-Windows.zip'
