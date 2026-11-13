@@ -38,10 +38,14 @@
       <li>Double-click <b>Make this PC reachable</b>, choose a password, click <b>Yes</b>.</li>
     </ol>
     <details>
-      <summary>Faster: one line, no unzipping</summary>
-      <p>Press <b>Win+R</b>, paste this, press Enter:</p>
-      <div class="line"><code id="w">powershell -ep bypass -c "[Net.ServicePointManager]::SecurityProtocol=3072;irm https://boreing-media.github.io/kite-download/win.txt|iex"</code><button data-copy="w">Copy</button></div>
+      <summary>Easier: one file that downloads, checks and sets up</summary>
+      <ol>
+        <li><a href="Install-Takeoff.cmd" download>Download Install-Takeoff.cmd</a> and double-click it.</li>
+        <li>If Windows says it protected your PC, click <b>More info</b> → <b>Run anyway</b>.</li>
+        <li>It fetches the newest Takeoff, checks its fingerprint with GitHub, then asks you to choose a password and click <b>Yes</b>.</li>
+      </ol>
     </details>
+    <p class="sha">Windows SHA-256: <code id="winsha">062514b2306f4ae351e451758ed1b3635779e229b6fbc78b97a97a66f98ad01e</code></p>
   </div>
 
   <div class="card">
