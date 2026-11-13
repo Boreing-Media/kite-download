@@ -1,16 +1,27 @@
 # Takeoff for Windows, one line. Run from Win+R (or any PowerShell):
 #   powershell -ep bypass -c "[Net.ServicePointManager]::SecurityProtocol=3072;irm https://boreing-media.github.io/kite-download/win.txt|iex"
-# Downloads the latest Takeoff-Windows.zip, unzips it (no "Extract All" step), runs "Make this PC reachable".
+# Downloads the pinned Takeoff-Windows.zip, checks its SHA-256, unzips it (no "Extract All" step), runs "Make this PC reachable".
 # Works back to Windows 7 / PowerShell 2: no Expand-Archive, no Invoke-WebRequest.
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}
-$url  = 'https://github.com/Boreing-Media/kite-download/releases/latest/download/Takeoff-Windows.zip'
+# Pinned by ./release (13 Nov 2026): this exact release and its SHA-256. A zip that differs is refused, never run.
+$tag  = '2026-11-13-1306'
+$sha  = 'd6affb633e5bd6a7482b7941d1d762e4d7f1cf2a7ab3c9216c766d56ff06789d'
+$url  = "https://github.com/Boreing-Media/kite-download/releases/download/$tag/Takeoff-Windows.zip"
 $root = Join-Path $env:LOCALAPPDATA 'Kite\download'
 $zip  = Join-Path $root 'Kite-Windows.zip'
 if (Test-Path $root) { Remove-Item $root -Recurse -Force }
 New-Item -ItemType Directory -Path $root | Out-Null
 Write-Host 'Downloading Takeoff...'
 (New-Object Net.WebClient).DownloadFile($url, $zip)
+# SHA-256 the PowerShell 2 way (no Get-FileHash): .NET's SHA256 over the file.
+$fs = [IO.File]::OpenRead($zip)
+try { $got = -join ([Security.Cryptography.SHA256]::Create().ComputeHash($fs) | ForEach-Object { $_.ToString('x2') }) } finally { $fs.Close() }
+if ($got -ne $sha) {
+  Remove-Item $root -Recurse -Force
+  throw "The Takeoff download does not match the published fingerprint (expected $sha, got $got). Nothing was installed. Tell Sam."
+}
+Write-Host 'Download checked (SHA-256 matches).'
 Write-Host 'Unzipping...'
 $sh = New-Object -ComObject Shell.Application
 $sh.Namespace($root).CopyHere($sh.Namespace($zip).Items(), 0x14)

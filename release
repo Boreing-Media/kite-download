@@ -22,4 +22,18 @@ GH() { ~/AppDevelopment/bin/gh-as samhaiman-boreingmedia "$@"; }
 GH release create "$TAG" -R Boreing-Media/kite-download --latest \
   --title "Takeoff $TAG" --notes "Windows: $(basename "$WIN") ($(date -r "$WIN" '+%d %b %H:%M')). Mac: $(basename "$DMG")." \
   out/Takeoff-Windows.zip out/Takeoff.dmg out/Kite-Windows.zip out/Kite.dmg
+# Pin this release in win.txt and on the page (13 Nov 2026): the one-liner downloads THIS tag and refuses
+# a zip whose SHA-256 differs; the page shows the DMG's SHA-256. GitHub's own digest of each uploaded
+# asset must equal the local file's, or nothing is pinned.
+WSHA=$(shasum -a 256 out/Takeoff-Windows.zip | cut -d' ' -f1)
+MSHA=$(shasum -a 256 out/Takeoff.dmg | cut -d' ' -f1)
+for pair in "Takeoff-Windows.zip:$WSHA" "Takeoff.dmg:$MSHA"; do
+  name=${pair%%:*}; want=${pair#*:}
+  got=$(GH release view "$TAG" -R Boreing-Media/kite-download --json assets -q ".assets[]|select(.name==\"$name\")|.digest")
+  [ "$got" = "sha256:$want" ] || { echo "uploaded $name digest ($got) differs from the local file ($want); win.txt NOT pinned" >&2; exit 1; }
+done
+sed -i '' -e "s/^\$tag  = '.*'/\$tag  = '$TAG'/" -e "s/^\$sha  = '.*'/\$sha  = '$WSHA'/" win.txt
+sed -i '' -e "s#releases/download/[^/]*/Takeoff.dmg#releases/download/$TAG/Takeoff.dmg#" -e "s#<code id=\"macsha\">[0-9a-f]*</code>#<code id=\"macsha\">$MSHA</code>#" index.html
+grep -q "^\$sha  = '$WSHA'" win.txt && grep -q "$MSHA" index.html || { echo "pinning failed; check win.txt/index.html" >&2; exit 1; }
+git add win.txt index.html && git commit -q -m "Pin Takeoff $TAG (SHA-256 checked)" && git pull -q --rebase && git push -q
 echo "Live: https://boreing-media.github.io/kite-download/"
