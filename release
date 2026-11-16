@@ -10,10 +10,55 @@ set -euo pipefail
 cd "$(dirname "$0")"
 OUT=~/AppDevelopment/kite/out
 WIN="$OUT/Takeoff-Windows.zip"
+SIG="$OUT/Takeoff-Windows.zip.sig"
 DMG=$(ls -t "$OUT"/Takeoff-*.dmg | head -1)
 [ -f "$WIN" ] && [ -f "$DMG" ] || { echo "missing installer in $OUT" >&2; exit 1; }
+# THE PAGE'S INSTALLER CHECKS OUR KEY (16 Nov 2026, audit risk #3). Install-Takeoff.cmd installs only a zip whose
+# Takeoff-Windows.zip.sig holds a P-256 signature (ECDSA over SHA-256 of the zip's bytes, r||s, hex) by a key
+# written in the .cmd itself. kite's mac/public-release.sh signs the zip (in the ship's one Touch ID) and leaves the
+# .sig beside it. Checked HERE, with the keys in this checkout's Install-Takeoff.cmd, before anything goes up: a zip
+# the page's installer would refuse (unsigned, stale .sig, a revoked or unknown key) is never published.
+[ -f "$SIG" ] || { echo "no $SIG: the Windows zip is not signed (kite's mac/public-release.sh signs it); nothing published" >&2; exit 1; }
 mkdir -p out
 cp "$WIN" out/Takeoff-Windows.zip
+cp "$SIG" out/Takeoff-Windows.zip.sig
+cmdkeys() { awk -v name="\$$1 = @(" 'index($0, name) == 1 {f=1; next} f && /^\)/ {f=0} f' Install-Takeoff.cmd | grep -oE '[0-9a-f]{130}' | tr '\n' ' '; }
+TRUSTED=$(cmdkeys TrustedP256)
+REVOKED=$(cmdkeys RevokedP256)
+[ -n "$TRUSTED" ] || { echo "Install-Takeoff.cmd trusts no P-256 key; nothing published" >&2; exit 1; }
+verdict=$(swift - out/Takeoff-Windows.zip out/Takeoff-Windows.zip.sig "$TRUSTED" "$REVOKED" <<'SWIFT'
+import CryptoKit
+import Foundation
+// zip, .sig (JSON), trusted keys, revoked keys (P-256 SEC1 hex, space separated). Prints one line; exit 0 = good.
+let a = CommandLine.arguments
+func unhex(_ s: String) -> Data? {
+    let c = Array(s.utf8)
+    guard !c.isEmpty, c.count % 2 == 0 else { return nil }
+    var d = Data()
+    for i in stride(from: 0, to: c.count, by: 2) {
+        guard let b = UInt8(String(decoding: c[i..<i + 2], as: UTF8.self), radix: 16) else { return nil }
+        d.append(b)
+    }
+    return d
+}
+func keys(_ s: String) -> [String] { s.split(separator: " ").map { $0.lowercased() } }
+guard a.count == 5, let zip = FileManager.default.contents(atPath: a[1]),
+      let raw = FileManager.default.contents(atPath: a[2]),
+      let obj = (try? JSONSerialization.jsonObject(with: raw)) as? [String: Any] else { print("the zip or its .sig cannot be read"); exit(1) }
+guard let h = obj["signature_p256"] as? String, let r = unhex(h), r.count == 64,
+      let sig = try? P256.Signing.ECDSASignature(rawRepresentation: r) else { print("the .sig holds no P-256 signature"); exit(1) }
+func good(_ k: String) -> Bool {
+    guard let kd = unhex(k), let pk = try? P256.Signing.PublicKey(x963Representation: kd) else { return false }
+    return pk.isValidSignature(sig, for: zip)
+}
+let revoked = keys(a[4])
+for k in revoked where good(k) { print("signed by a REVOKED key (\(k.prefix(16))...)"); exit(1) }
+for k in keys(a[3]) where !revoked.contains(k) && good(k) { print("P-256, key \(k.prefix(16))..."); exit(0) }
+print("not signed by a key Install-Takeoff.cmd trusts (a stale .sig, or a new key not yet in the .cmd?)")
+exit(1)
+SWIFT
+) || { echo "Takeoff-Windows.zip.sig: $verdict; nothing published" >&2; exit 1; }
+echo "Windows zip signature checked: $verdict"
 cp "$DMG" out/Takeoff.dmg
 cp "$WIN" out/Kite-Windows.zip
 cp "$DMG" out/Kite.dmg
@@ -21,16 +66,18 @@ TAG=$(date +%Y-%m-%d-%H%M)
 GH() { ~/AppDevelopment/bin/gh-as samhaiman-boreingmedia "$@"; }
 GH release create "$TAG" -R Boreing-Media/kite-download --latest \
   --title "Takeoff $TAG" --notes "Windows: $(basename "$WIN") ($(date -r "$WIN" '+%d %b %H:%M')). Mac: $(basename "$DMG")." \
-  out/Takeoff-Windows.zip out/Takeoff.dmg out/Kite-Windows.zip out/Kite.dmg
+  out/Takeoff-Windows.zip out/Takeoff-Windows.zip.sig out/Takeoff.dmg out/Kite-Windows.zip out/Kite.dmg
 # Install-Takeoff.cmd (the page's one-file install since 13 Nov 2026) needs no pin: it asks GitHub's API for the
-# newest release and GitHub's own SHA-256 of the zip. win.txt (the old irm|iex one-liner, no longer on the page because
+# newest release, GitHub's own SHA-256 of the zip and Takeoff-Windows.zip.sig, and checks the signature against the
+# key written in it (checked above before upload). win.txt (the old irm|iex one-liner, no longer on the page because
 # Defender blocks that pattern as ClickFix) is still pinned for anyone who saved it.
 # Pin this release in win.txt and on the page (13 Nov 2026): the one-liner downloads THIS tag and refuses
 # a zip whose SHA-256 differs; the page shows the DMG's SHA-256. GitHub's own digest of each uploaded
 # asset must equal the local file's, or nothing is pinned.
 WSHA=$(shasum -a 256 out/Takeoff-Windows.zip | cut -d' ' -f1)
 MSHA=$(shasum -a 256 out/Takeoff.dmg | cut -d' ' -f1)
-for pair in "Takeoff-Windows.zip:$WSHA" "Takeoff.dmg:$MSHA"; do
+SSHA=$(shasum -a 256 out/Takeoff-Windows.zip.sig | cut -d' ' -f1)
+for pair in "Takeoff-Windows.zip:$WSHA" "Takeoff.dmg:$MSHA" "Takeoff-Windows.zip.sig:$SSHA"; do
   name=${pair%%:*}; want=${pair#*:}
   got=$(GH release view "$TAG" -R Boreing-Media/kite-download --json assets -q ".assets[]|select(.name==\"$name\")|.digest")
   [ "$got" = "sha256:$want" ] || { echo "uploaded $name digest ($got) differs from the local file ($want); win.txt NOT pinned" >&2; exit 1; }
